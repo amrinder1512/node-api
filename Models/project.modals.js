@@ -2,9 +2,9 @@
 const mongoose =require("mongoose");
 const projectSchema =mongoose.Schema(
     {
-        _id:{type:Number},
-        employee_name:{type:String, required: [true, "Please enter your name"]},
-        projects:{type:String}, 
+        product_id:{type:Number, unique:true},
+        employee_id:{type:Number, unique:true},
+        projects:{type:String}
        
     }
 );
