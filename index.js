@@ -6,11 +6,38 @@ const timesheet = require("./Models/timesheet.modals");
 const login = require("./Models/userlogin.modal")
 const superadmin= require("./Models/superadmin.modals")
 const app = express();
+const cors = require('cors');
+
+
+app.use(cors());
 app.use(express.json());
 
 
 const mongoURI =
   "mongodb+srv://amrinder022000:15121999Amrinder@loginandmanagementsyste.rhriyb5.mongodb.net/LoginAndManagementSystem?retryWrites=true&w=majority&appName=LoginAndManagementSystem";
+
+
+
+const mockUser = {
+  email: 'superadmin@test.com',
+  password: 'superadmin@test.com',
+  token: 'some-jwt-token',
+};
+
+
+
+
+  app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    console.log('Received login request with:', { email, password });
+  
+    if (email === mockUser.email && password === mockUser.password) {
+      res.json({ token: mockUser.token, data: 'Login successful' });
+    } else {
+      res.status(401).json({ message: 'Invalid email or password' });
+    }
+  });
+
 
 app.post("/users", async (request, response) => {
   const newuser = await users.create(request.body);
@@ -74,14 +101,14 @@ app.delete("/timesheet", async (request, response) => {
 
 
 
-app.post("/login", async (request, response)=>{
-  const loginuser = await login.create(request.body);
-  response.status(201).send(loginuser);
-});
-app.get("/login", async (request, response)=>{
-  const loginuser = await login.findOne(request.body).select("-password");
-  response.status(200).send(loginuser);
-});
+// app.post("/login", async (request, response)=>{
+//   const loginuser = await login.create(request.body);
+//   response.status(201).send(loginuser);
+// });
+// app.get("/login", async (request, response)=>{
+//   const loginuser = await login.findOne(request.body).select("-password");
+//   response.status(200).send(loginuser);
+// });
 
 
 
