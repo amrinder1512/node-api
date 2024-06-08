@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const express = require("express");
 const users = require("./Models/employee.modals");
-const project = require("./Models/project.modals");
+const project = require("./Models/addproject.modals");
 const timesheet = require("./Models/timesheet.modals");
 const login = require("./Models/userlogin.modal")
 const superadmin= require("./Models/superadmin.modals")
@@ -18,7 +18,7 @@ const mongoURI =
 
 
 
-const mockUser = {
+const superadminUser = {
   email: 'superadmin@test.com',
   password: 'superadmin@test.com',
   token: 'some-jwt-token',
@@ -31,8 +31,8 @@ const mockUser = {
     const { email, password } = req.body;
     console.log('Received login request with:', { email, password });
   
-    if (email === mockUser.email && password === mockUser.password) {
-      res.json({ token: mockUser.token, data: 'Login successful' });
+    if (email === superadminUser.email && password === superadminUser.password) {
+      res.json({ token: superadminUser.token, data: 'Login successful' });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
