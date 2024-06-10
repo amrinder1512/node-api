@@ -54,7 +54,7 @@ app.put("/users", async (request, response) => {
 });
 app.delete("/users", async (request, response) => {
   const newuser = await users.deleteOne(request.body);
-  response.status(201).send(newuser);
+  response.status(201).send(newuser);bo
 });
 
 

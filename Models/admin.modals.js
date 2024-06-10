@@ -6,5 +6,5 @@ const AdminSchema =mongoose.Schema(
        
     }
 );
-const Admin= mongoose.model ("Amdin", AdminSchema);
+const Admin= mongoose.model ("Admin", AdminSchema);
 module.exports=Admin;
