@@ -73,9 +73,9 @@ app.put("/project", async (request, response) => {
   const newuser = await project.updateOne(request.body);
   response.status(201).send(newuser);
 });
-app.delete("/project", async (request, response) => {
-  const newuser = await project.deleteOne(request.body);
-  response.status(201).send(newuser);
+app.delete("/project/:id", async (request, response) => {
+  const newuser = await project.deleteOne({"project_id":request.params.id});
+  response.status(200).send(newuser);
 });
 
 
