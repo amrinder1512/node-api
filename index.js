@@ -5,6 +5,7 @@ const project = require("./Models/addproject.modals");
 const timesheet = require("./Models/timesheet.modals");
 const login = require("./Models/userlogin.modal")
 const superadmin= require("./Models/superadmin.modals")
+const assign = require("./Models/assign.modals")
 const app = express();
 const cors = require('cors');
 
@@ -52,10 +53,29 @@ app.put("/users", async (request, response) => {
   const newuser = await users.updateOne(request.body);
   response.status(201).send(newuser);
 });
-app.delete("/users", async (request, response) => {
-  const newuser = await users.deleteOne(request.body);
-  response.status(201).send(newuser);bo
+app.delete("/users/:id", async (request, response) => {
+  const newuser = await users.deleteOne({"employee_id": request.params.id});
+  response.status(200).send(newuser);
 });
+
+
+
+
+
+
+app.post("/assign", async (request, response) => {
+  const { employee_id, project_id } = request.body;
+
+  try {
+    const newAssignment = new assign({ employee_id, project_id });
+    await newAssignment.save();
+    response.status(201).json(newAssignment);
+  } catch (error) {
+    response.status(400).json({ error: error.message });
+  }
+});
+
+
 
 
 
