@@ -7,11 +7,11 @@ const projectSchema = new mongoose.Schema(
     _id: { type: Number },
     project_id: { type: String, unique: true, default: uuidv4 },
     project_name: { type: String, required: true },
-    project_description: { type: String }
+    project_description: { type: String },
   },
   {
     timestamps: true,
-    _id: false // Disable default auto-generated ObjectId
+    _id: false, // Disable default auto-generated ObjectId
   }
 );
 

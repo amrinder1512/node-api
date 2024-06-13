@@ -1,18 +1,19 @@
-
 const mongoose = require('mongoose');
 
-const assignSchema = mongoose.Schema(
+const assignSchema = new mongoose.Schema(
   {
     employee_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Employee',
+      type: String,
+      ref: 'User',
       required: true,
     },
-    project_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Project',
-      required: true,
-    },
+    project_id: [
+      {
+        type: String,
+        ref: 'Project',
+        required: true,
+      },
+    ],
   },
   {
     timestamps: true,

@@ -60,22 +60,28 @@ app.delete("/users/:id", async (request, response) => {
 
 
 
-
-
-
-app.post("/assign", async (request, response) => {
-  const { employee_id, project_id } = request.body;
-
-  try {
-    const newAssignment = new assign({ employee_id, project_id });
-    await newAssignment.save();
-    response.status(201).json(newAssignment);
-  } catch (error) {
-    response.status(400).json({ error: error.message });
-  }
+app.get("/assign", async (request, response) => {
+  const newuser = await assign.find();
+  response.send(newuser);
 });
 
+app.post('/assign', async (req, res) => {
+  const { employee_id, project_id } = req.body;
 
+  try {
+    const assignment = await assign.create({
+      employee_id: req.body.employee_id,
+      project_id: req.body.project_id,
+    });
+  
+    res.status(201).json({ message: 'Assignments successful', assignment });
+  } catch (error) {
+    console.error('Error assigning projects:', error);
+    res.status(500).json({ message: 'Failed to assign projects', error: error.message });
+  }
+  
+  
+});
 
 
 
