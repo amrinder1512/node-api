@@ -7,7 +7,7 @@ const userlogin = require("./Models/userlogin.modal");
 const superadmin = require("./Models/superadmin.modals");
 const bcrypt = require("bcrypt");
 
-const assign = require("./Models/assign.modals");
+const Assign = require("./Models/assign.modals");
 const app = express();
 const cors = require("cors");
 
@@ -122,42 +122,51 @@ app.delete("/users/:id", async (request, response) => {
 
 
 //View Assigned Project
-app.get("/assign", async (req, res) => {
-  try {
-    const assignments = await assign.aggregate([
-      {
-        $lookup: {
-          from: "users", // Ensure this matches the actual collection name in MongoDB
-          localField: "employee_id",
-          foreignField: "_id",
-          as: "employee",
-        },
-      },
-      {
-        $lookup: {
-          from: "projects", // Ensure this matches the actual collection name in MongoDB
-          localField: "project_id",
-          foreignField: "_id",
-          as: "project",
-        },
-      },
-      {
-        $unwind: "$employee",
-      },
-      {
-        $unwind: "$project",
-      },
-    ]);
-
-    res.send(assignments);
-  } catch (error) {
-    console.error("Error fetching assignments:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to fetch assignments", error: error.message });
+async function getAssignmentDetails(assignmentId) {
+  if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
+    console.log('Invalid assignment ID');
+    return null;
   }
-});
 
+  try {
+    const assignment = await Assign.findById(assignmentId)
+      .populate({
+        path: '_id',
+        select: 'employee_name', // Selecting only the name field from the User schema
+      })
+      .populate({
+        path: '_id',
+        select: 'project_name project_description', // Selecting name and description fields from the Project schema
+      });
+
+    if (!assignment) {
+      console.log('Assignment not found');
+      return null;
+    }
+
+    console.log(assignment);
+    return assignment;
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+}
+
+// Usage example:
+const validAssignmentId = '60d5ec49f9e1e80ef8c5ab12'; // Replace this with your actual valid ObjectId
+getAssignmentDetails(validAssignmentId)
+  .then((assignment) => {
+    if (assignment) {
+      console.log('Employee Name:', assignment.employee_id.name);
+      assignment.project_id.forEach((project) => {
+        console.log('Project Name:', project.name);
+        console.log('Project Description:', project.description);
+      });
+    }
+  })
+  .catch((err) => {
+    console.error('Error fetching assignment details:', err);
+  });
 
 
 // Assign Project Request

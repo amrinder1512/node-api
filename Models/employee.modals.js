@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    _id: false, // Disable default auto-generated ObjectId
+    _id:  false, // Disable default auto-generated ObjectId
   }
 );
 

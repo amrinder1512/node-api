@@ -12,11 +12,13 @@ const assignSchema = new mongoose.Schema(
         type: String,
         ref: 'Project',
         required: true,
+        
       },
     ],
   },
   {
     timestamps: true,
+    _id:true, type: String
   }
 );
 
