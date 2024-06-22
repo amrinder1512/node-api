@@ -122,51 +122,50 @@ app.delete("/users/:id", async (request, response) => {
 
 
 //View Assigned Project
-async function getAssignmentDetails(assignmentId) {
-  if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
-    console.log('Invalid assignment ID');
-    return null;
-  }
 
-  try {
-    const assignment = await Assign.findById(assignmentId)
-      .populate({
-        path: '_id',
-        select: 'employee_name', // Selecting only the name field from the User schema
-      })
-      .populate({
-        path: '_id',
-        select: 'project_name project_description', // Selecting name and description fields from the Project schema
-      });
+app.get("/assign", async (req, res)=>{
+try {
+  const assignments = await Assign.aggregate([
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'employee_id',
+        foreignField: 'employee_id',
+        as: 'employee',
+      },
+    },
+    {
+      $unwind: '$employee',
+    },
+    {
+      $lookup: {
+        from: 'projects',
+        localField: 'project_id',
+        foreignField: 'project_id',
+        as: 'project',
+      },
+    },
+    {
+      $unwind: '$project',
+    },
+    {
+      $project: {
+        assign_id: '$_id',
+        employee_id: '$employee.employee_id',
+        employee_name: '$employee.employee_name',
+        project_id: '$project._id',
+        project_name: '$project.project_name',
+        project_description: '$project.project_description',
+      },
+    },
+  ]);
 
-    if (!assignment) {
-      console.log('Assignment not found');
-      return null;
-    }
-
-    console.log(assignment);
-    return assignment;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
+  res.json(assignments);
+} catch (error) {
+  res.status(500).json({ message: 'Error fetching assigned projects', error });
 }
+});
 
-// Usage example:
-const validAssignmentId = '60d5ec49f9e1e80ef8c5ab12'; // Replace this with your actual valid ObjectId
-getAssignmentDetails(validAssignmentId)
-  .then((assignment) => {
-    if (assignment) {
-      console.log('Employee Name:', assignment.employee_id.name);
-      assignment.project_id.forEach((project) => {
-        console.log('Project Name:', project.name);
-        console.log('Project Description:', project.description);
-      });
-    }
-  })
-  .catch((err) => {
-    console.error('Error fetching assignment details:', err);
-  });
 
 
 // Assign Project Request
@@ -174,7 +173,7 @@ app.post("/assign", async (req, res) => {
   const { employee_id, project_id } = req.body;
 
   try {
-    const assignment = await assign.create({
+    const assignment = await Assign.create({
       employee_id: req.body.employee_id,
       project_id: req.body.project_id,
     });
@@ -186,6 +185,10 @@ app.post("/assign", async (req, res) => {
       .status(500)
       .json({ message: "Failed to assign projects", error: error.message });
   }
+});
+app.delete("/assign/:id", async (request, response) => {
+  const newuser = await Assign.deleteOne({ _id: request.params.id });
+  response.status(200).send(newuser);
 });
 
 

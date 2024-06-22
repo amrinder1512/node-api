@@ -3,7 +3,6 @@ const AutoIncrement = require("mongoose-sequence")(mongoose);
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 
-// Define the schema
 const userSchema = new mongoose.Schema(
   {
     _id: { type: Number },
@@ -13,7 +12,7 @@ const userSchema = new mongoose.Schema(
       type: String, 
       required: [true, "Please enter your email"], 
       unique: true,
-      match: [/\S+@\S+\.\S+/, "Please enter a valid email"] // Email format validation
+      match: [/\S+@\S+\.\S+/, "Please enter a valid email"]
     },
     employee_password: { 
       type: String, 
@@ -23,20 +22,18 @@ const userSchema = new mongoose.Schema(
       type: String, 
       required: [true, "Please enter your phone"], 
       unique: true,
-      match: [/^\d{10}$/, "Please enter a valid phone number"] // Phone number validation (example: 10 digits)
+      match: [/^\d{10}$/, "Please enter a valid phone number"]
     },
     employee_address: { type: String, required: [true, "Please enter your address"] },
   },
   {
     timestamps: true,
-    _id:  false, // Disable default auto-generated ObjectId
+    _id: false, // Disable default auto-generated ObjectId
   }
 );
 
-// Apply auto-increment plugin
 userSchema.plugin(AutoIncrement, { id: 'employee_seq', inc_field: '_id' });
 
-// Pre-save hook to hash the password
 userSchema.pre("save", async function (next) {
   if (!this.isModified("employee_password")) return next();
   try {
@@ -48,8 +45,5 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Create the model
 const User = mongoose.model("User", userSchema);
-
-// Export the model
 module.exports = User;
