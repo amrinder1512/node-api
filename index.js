@@ -7,6 +7,7 @@ const userlogin = require("./Models/userlogin.modal");
 const superadmin = require("./Models/superadmin.modals");
 const bcrypt = require("bcrypt");
 
+
 const Assign = require("./Models/assign.modals");
 const app = express();
 const cors = require("cors");
@@ -23,7 +24,14 @@ const superadminUser = {
   token: "some-jwt-token",
 };
 
-
+// app.get("/contact" , async (req, res )=>{
+//   const contacts = await contact.findOne();
+//   res.send(contacts)
+// });
+// app.post("/contact" , async (req, res )=>{
+//   const contacts = await contact.create(req.body);
+//   res.send(contacts)
+// });
 
 //Super Admin Login
 app.post("/login", (req, res) => {
@@ -206,6 +214,11 @@ app.get("/project", async (request, response) => {
 });
 
 
+
+
+
+
+
 app.get("/project/:id", async (req, res) => {
   try {
     const editproject = await project.findById(req.params.id);
@@ -293,6 +306,7 @@ mongoose
   .then(() => {
     console.log("connected");
     app.listen(8080);
+    console.log("Port is 8080");
   })
   .catch((err) => {
     console.log("There was an Error" + err);
