@@ -1,9 +1,10 @@
   const mongoose = require("mongoose");
   const userSchema = mongoose.Schema(
     {
-      _id: { type: Number },
-      employee_id:{ type: Number, unique: true},
-      employee_name: { type: String, required: [true, "Please enter your name"] },
+      employeeName:{type : String},
+      project:{type : String},
+      description:{type : String},
+      dateTime:{type : String}
     },
     { timestamps: true }
   );
