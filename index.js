@@ -4,12 +4,13 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const users = require("./Models/employee.modals");
 const project = require("./Models/addproject.modals");
-const timesheet = require("./Models/timesheet.modals");
+const Timesheet = require("./Models/timesheet.modals");
 const userlogin = require("./Models/userlogin.modal");
 const superadmin = require("./Models/superadmin.modals");
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const authenticateToken = require('./authMiddleware'); 
+
 
 const Assign = require("./Models/assign.modals");
 const app = express();
@@ -99,6 +100,9 @@ app.post("/userslogin", async (req, res) => {
   }
 });
 
+app.post("/logout", async(req, res)=>{
+  res.json({ message: "Logout successful" }); 
+})
 // Middleware to check if user is authenticated
 const checkAuthenticated = (req, res, next) => {
   if (req.session.user) {
@@ -128,8 +132,18 @@ const checkAuthenticated = (req, res, next) => {
         },
         { $unwind: '$project' },
         {
+          $lookup: {
+            from: 'users',
+            localField: 'employee_id',
+            foreignField: 'employee_id',
+            as: 'employee',
+          },
+        },
+        { $unwind: '$employee' },
+        {
           $project: {
             assign_id: '$_id',
+            employee_id:'$employee.employee_id',
             project_id: '$project._id',
             project_name: '$project.project_name',
             project_description: '$project.project_description',
@@ -137,7 +151,7 @@ const checkAuthenticated = (req, res, next) => {
         },
       ]);
 
-      res.json({ name: user.employee_name, assignments });
+      res.json({ name: user.employee_name, employee_id:user.employee_id, assignments });
     } catch (error) {
       res.status(500).json({ message: 'Error fetching dashboard data', error });
     }
@@ -302,6 +316,15 @@ app.get("/project", async (req, res) => {
   res.send(newuser);
 });
 
+app.get("/projects", async (req, res) => {
+  try {
+    const unassignedProjects = await Assign.find({ assigned: false });
+    res.send(unassignedProjects);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error fetching unassigned projects");
+  }
+});
 // View Project by ID
 app.get("/project/:id", async (req, res) => {
   try {
@@ -341,23 +364,111 @@ app.delete("/project/:id", async (req, res) => {
   res.status(200).send(newuser);
 });
 
-// Timesheet
-app.post("/timesheet", async (req, res) => {
-  const newuser = await timesheet.create(req.body);
-  res.status(201).send(newuser);
-});
+
 app.get("/timesheet", async (req, res) => {
-  const newuser = await timesheet.find();
+  const newuser = await Timesheet.find();
   res.send(newuser);
 });
-app.put("/timesheet", async (req, res) => {
-  const newuser = await timesheet.updateOne(req.body);
-  res.status(201).send(newuser);
-});
+
 app.delete("/timesheet", async (req, res) => {
-  const newuser = await timesheet.deleteOne(req.body);
+  const newuser = await Timesheet.deleteOne(req.body);
   res.status(201).send(newuser);
 });
+
+
+
+
+
+
+
+app.post("/timesheet", async (req, res) => {
+  try {
+    const assignment = await Timesheet.create(req.body);
+    res.status(201).json({ message: "Assignment successful", assignment });
+  } catch (error) {
+    console.error("Error assigning projects:", error);
+    res.status(500).json({ message: "Failed to assign projects", error: error.message });
+  }
+});
+
+
+
+
+
+
+// app.post('/timesheet', async (req, res) => {
+//   try {
+//     console.log('Request Body:', req.body); // Log request body
+
+//     // Validate the incoming request data
+//     const { error } = validateTimesheet(req.body);
+//     if (error) {
+//       console.error('Validation Error:', error.details[0].message); // Log validation error
+//       return res.status(400).send({ error: error.details[0].message });
+//     }
+
+//     // Check if the timesheet entry already exists for the user and project
+//     const existingTimesheet = await Timesheet.findOne({
+//       employee_id: req.body.employee_id,
+//       project_name: req.body.project_name,
+//       dateTime: req.body.dateTime,
+//     });
+
+//     if (existingTimesheet) {
+//       console.log('Timesheet entry already exists for this user and project.');
+//       return res.status(409).send({ error: 'Timesheet entry already exists' });
+//     }
+
+//     // Create a new timesheet entry
+//     const newTimesheet = await Timesheet.create({
+//       employee_id: req.body.employee_id,
+//       employee_name: req.body.employee_name,
+//       project_name: req.body.project_name,
+//       project_description: req.body.project_description,
+//       dateTime: req.body.dateTime,
+//     });
+
+//     // Send success response
+//     res.status(201).send(newTimesheet);
+//   } catch (error) {
+//     console.error('Server Error:', error); // Log server error
+//     res.status(500).send({ error: 'Internal Server Error' });
+//   }
+// });
+
+
+// // Hypothetical validation function using Joi
+// const Joi = require('joi');
+
+// function validateTimesheet(timesheet) {
+//   const schema = Joi.object({
+//     employee_id: Joi.string().required(),
+//     employee_name: Joi.string().required(),
+//     project_name: Joi.string().required(),
+//     project_description: Joi.string().required(),
+//     dateTime: Joi.date().iso().required(),
+//   });
+
+//   return schema.validate(timesheet);
+// }
+
+// module.exports = validateTimesheet;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 mongoose.connect(mongoURI)
   .then(() => {
