@@ -11,6 +11,10 @@ const timesheetSchema = new mongoose.Schema(
       required: true,
       unique:false
     },
+    project_id: {
+      type: String, // Assuming it's an ObjectId referencing the Projects collection
+      required: true,
+    },
     project_name: {
       type: String,
       required: true,
