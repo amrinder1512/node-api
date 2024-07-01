@@ -381,45 +381,45 @@ app.get('/timesheets/:projectId', async (req, res) => {
 
 
 
-// app.get("/timesheet", async (req, res) => {
-//   try {
-//     const timesheets = await Timesheet.aggregate([
-//       {
-//         $lookup: {
-//           from: "users",
-//           localField: "employee_id",
-//           foreignField: "employee_id",
-//           as: "employee",
-//         },
-//       },
-//       { $unwind: "$employee" },
-//       {
-//         $lookup: {
-//           from: "projects",
-//           localField: "project_id",
-//           foreignField: "project_id", // Assuming _id is the unique identifier for projects
-//           as: "project",
-//         },
-//       },
-//       { $unwind: "$project" },
-//       {
-//         $project: {
-//           _id:"$project._id",
-//           employee_id: "$employee.employee_id",
-//           employee_name: "$employee.employee_name",
-//           project_id: "$project.project_id",
-//           project_name: "$project.project_name",
-//           project_description: "$project.project_description",
-//           dateTime: "$dateTime", // Ensure dateTime is correctly referenced
-//         },
-//       },
-//     ]);
+app.get("/timesheet", async (req, res) => {
+  try {
+    const timesheets = await Timesheet.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "employee_id",
+          foreignField: "employee_id",
+          as: "employee",
+        },
+      },
+      { $unwind: "$employee" },
+      {
+        $lookup: {
+          from: "projects",
+          localField: "project_id",
+          foreignField: "project_id", // Assuming _id is the unique identifier for projects
+          as: "project",
+        },
+      },
+      { $unwind: "$project" },
+      {
+        $project: {
+          _id:"$project._id",
+          employee_id: "$employee.employee_id",
+          employee_name: "$employee.employee_name",
+          project_id: "$project.project_id",
+          project_name: "$project.project_name",
+          project_description: "$project.project_description",
+          dateTime: "$dateTime", // Ensure dateTime is correctly referenced
+        },
+      },
+    ]);
 
-//     res.json(timesheets);
-//   } catch (error) {
-//     res.status(500).json({ message: "Error fetching assigned projects", error });
-//   }
-// });
+    res.json(timesheets);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching assigned projects", error });
+  }
+});
 
 
 app.delete("/timesheet", async (req, res) => {
