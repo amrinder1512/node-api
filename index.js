@@ -39,18 +39,6 @@ const superadminUser = {
   token: "some-jwt-token",
 };
 
-// Middleware to verify JWT tokens
-const authenticateTokens = (req, res, next) => {
-  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Unauthorized' });
-
-  jwt.verify(token, secretKey, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Forbidden' });
-    req.user = user;
-    next();
-  });
-};
-
 // Super Admin Login
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
@@ -103,64 +91,82 @@ app.post("/userslogin", async (req, res) => {
 app.post("/logout", async(req, res)=>{
   res.json({ message: "Logout successful" }); 
 })
-// Middleware to check if user is authenticated
-const checkAuthenticated = (req, res, next) => {
-  if (req.session.user) {
-    next();
-  } else {
-    res.status(401).send('Unauthorized');
+app.get('/timehistory', authenticateToken, async (req, res) => {
+  try {
+    const timesheets = await Timesheet.find({ employee_id: req.userId });
+    res.status(200).json(timesheets);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch timesheet history' });
   }
-};
+});
 
-// Dashboard endpoint (protected)
-  app.get('/dashboard', authenticateToken, async (req, res) => {
-    try {
-      const user = await users.findOne({ employee_email: req.user.email });
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
 
-      const assignments = await Assign.aggregate([
-        { $match: { employee_id: user.employee_id } },
-        {
-          $lookup: {
-            from: 'projects',
-            localField: 'project_id',
-            foreignField: 'project_id',
-            as: 'project',
-          },
-        },
-        { $unwind: '$project' },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'employee_id',
-            foreignField: 'employee_id',
-            as: 'employee',
-          },
-        },
-        { $unwind: '$employee' },
-        {
-          $project: {
-            assign_id: '$_id',
-            employee_id:'$employee.employee_id',
-            project_id: '$project.project_id',
-            project_name: '$project.project_name',
-            project_description: '$project.project_description',
-          },
-        },
-      ]);
 
-      res.json({ name: user.employee_name, employee_id:user.employee_id, project_id:project.project_id, assignments });
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching dashboard data', error });
+
+app.get('/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const user = await users.findOne({ employee_email: req.user.email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-  });
+
+    const assignments = await Assign.aggregate([
+      { $match: { employee_id: user.employee_id } },
+      {
+        $lookup: {
+          from: 'projects',
+          localField: 'project_id',
+          foreignField: 'project_id',
+          as: 'project',
+        },
+      },
+      { $unwind: '$project' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'employee_id',
+          foreignField: 'employee_id',
+          as: 'employee',
+        },
+      },
+      { $unwind: '$employee' },
+      {
+        $project: {
+          assign_id: '$_id',
+          employee_id: '$employee.employee_id',
+          employee_email: '$employee.employee_email',
+          employee_phone: '$employee.employee_phone',
+          employee_address: '$employee.employee_address',
+          project_id: '$project.project_id',
+          project_name: '$project.project_name',
+          project_description: '$project.project_description',
+        },
+      },
+    ]);
+
+    res.json({
+      name: user.employee_name,
+      employee_id: user.employee_id,
+      employee_email: user.employee_email,
+      employee_phone: user.employee_phone,
+      employee_address: user.employee_address,
+      assignments,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching dashboard data', error });
+  }
+});
+
 
 // Add Employee
 app.post("/users", async (req, res) => {
-  const newuser = await users.create(req.body);
-  res.status(201).send(newuser);
+  try {
+    const newuser = await users.create(req.body); // Create a new user based on req.body
+    res.status(201).json(newuser); // Respond with HTTP 201 and the created user object
+  } catch (error) {
+    console.error('Error creating user:', error.message);
+    res.status(500).json({ error: 'Server error' }); // Handle server errors
+  }
 });
 
 // View Employee
@@ -168,12 +174,60 @@ app.get("/users", async (req, res) => {
   const newuser = await users.find();
   res.send(newuser);
 });
+app.get("/users/:id", async (req, res) => {
+  const employeeId = req.params.id; // Extract id from request parameters
+  try {
+    // Assuming users is your Mongoose model for users
+    const foundEmployee = await users.findOne({ employee_id: employeeId }); // Querying user by employee_id
+
+    if (!foundEmployee) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(foundEmployee); // Send user details as JSON response
+  } catch (err) {
+    console.error('Error fetching employee details:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
+
 
 // Edit Employee Details
-app.put("/users", async (req, res) => {
-  const newuser = await users.updateOne(req.body);
-  res.status(201).send(newuser);
+app.put("/users/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const updateData = req.body;
+
+    // Check if password is being updated
+    if (updateData.employee_password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.employee_password = await bcrypt.hash(updateData.employee_password, salt);
+    }
+
+    const result = await users.updateOne({ employee_id: userId }, { $set: updateData });
+
+    if (result.nModified === 0) {
+      res.status(404).send("User not found or no changes made");
+    } else {
+      res.status(200).send("User updated successfully");
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error updating user");
+  }
 });
+
+
+
+
+
+
+
+
+
 
 // Delete Employee
 app.delete("/users/:id", async (req, res) => {
@@ -315,10 +369,34 @@ app.get("/project", async (req, res) => {
   const newuser = await project.find();
   res.send(newuser);
 });
+app.get("/project/:id", async (req, res) => {
+  const projectId = req.params.id; // Extract id from request parameters
+  try {
+    // Assuming project is your Mongoose model for projects
+    const foundProject = await project.findOne({ project_id: projectId }); // Querying project by id
 
+    if (!foundProject) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    res.json(foundProject); // Send project details as JSON response
+  } catch (err) {
+    console.error('Error fetching project:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
+// View Project which is pending to assign
 app.get("/projects", async (req, res) => {
   try {
-    const unassignedProjects = await Assign.find({ assigned: false });
+    
+    const assignedProjects = await Assign.find().distinct('project_id');
+    
+  
+    const unassignedProjects = await project.find({ project_id: { $nin: assignedProjects } });
+    
     res.send(unassignedProjects);
   } catch (err) {
     console.error(err);
@@ -339,24 +417,29 @@ app.get("/project/:id", async (req, res) => {
   }
 });
 
-// Edit Project
+// Edit Project 
 app.put("/project/:id", async (req, res) => {
   try {
-    const updatedProject = await project.updateOne(
+    const result = await project.updateOne(
       { project_id: req.params.id },
       { $set: req.body }
     );
 
-    if (updatedProject.nModified > 0) {
-      const updatedProjectData = await project.findOne({ project_id: req.params.id });
+    if (result.matchedCount > 0) {
+      const updatedProjectData = await project.findOne({
+        project_id: req.params.id,
+      });
       res.status(200).json(updatedProjectData);
     } else {
       res.status(404).json({ message: "Project not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error updating project:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
 
 // Delete Project
 app.delete("/project/:id", async (req, res) => {

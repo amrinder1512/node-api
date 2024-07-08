@@ -23,6 +23,10 @@ const timesheetSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    total_working_hours: {
+      type: Number,
+      required: true,
+    },
     dateTime: { 
       type: String, 
       required: true 
