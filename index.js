@@ -48,13 +48,22 @@ app.post("/login", (req, res) => {
   if (email === superadminUser.email && password === superadminUser.password) {
     const token = jwt.sign({ email }, secretKey, { expiresIn: "1h" });
     res.json({ token, data: "Login successful" });
+    console.log("Login Successful");
   } else {
     res.status(401).json({ message: "Invalid email or password" });
   }
 });
 
+app.post("/logoutadmin", (req, res) => {
+  // Since JWTs are stateless, there's no need to do much on the server side
+  // The main task is to ensure the token is not used anymore on the client side
+  // This is usually handled by removing the token from localStorage or sessionStorage
 
+  // Optionally, you could implement token blacklisting or session management
+  // if your application requires it for enhanced security
 
+  res.json({ message: "Logged out successfully!" });
+});
 
 // Employee Login
 app.post("/userslogin", async (req, res) => {
@@ -110,6 +119,7 @@ app.post('/logout', (req, res) => {
     }
     res.clearCookie('connect.sid');
     res.send('Logged out successfully!');
+    console.log("logout successfull")
   });
 });
 
